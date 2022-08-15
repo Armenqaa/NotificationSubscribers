@@ -1,0 +1,46 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: OTNmYTdjYmZkMjE5ZmYzODg0MDZiYWJh
+    volumes:
+      - ./data/mongo:/data/db
+      - ./data/mongo-init:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: OTNmYTdjYmZkMjE5ZmYzODg0MDZiYWJh
+  subs:
+    build: src
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+     - mongo
+    working_dir: /app
+    volumes:
+      - ./src:/app
+    command: uvicorn subs:app --host 0.0.0.0 --port 8000 --reload
+    env_file: .env
+  infra:
+    build: ../InfrastructureNotifications/
+    ports:
+      - "8001:8001"
+    restart: always
+    env_file: ../InfrastructureNotifications/.env
+    working_dir: /app
+    volumes:
+      - ../InfrastructureNotifications/src/infra.py:/app/infra.py
+      - ../InfrastructureNotifications/src/tools.py:/app/tools.py
+      - ../InfrastructureNotifications/.mapping:/app/.mapping
+    command: uvicorn infra:app --host 0.0.0.0 --port 8001 --reload
+    # gunicorn main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
